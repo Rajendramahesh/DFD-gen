@@ -118,33 +118,88 @@ The tool generates two main outputs:
 
 ### 1. Mermaid DFD Diagram
 ```mermaid
-flowchart TD;
-  subgraph Internet;
-    User[External Entity: User];
-    GitRepo[External Entity: Git Repository];
-  end;
-  subgraph App[DFD Generator System];
-    MainApp[Process: Main Application];
-    PromptEngine[Process: Prompt Engine];
-    IngestEngine[Process: Codebase Ingestor];
-    OpenAI[Process: OpenAI API Client];
-    Output[Process: Output Formatter];
-  end;
-  subgraph ExternalServices;
-    OpenAIService[External Entity: OpenAI API];
-  end;
-  
-  User -->|Use Case Description| MainApp;
-  User -->|Git Repository URL| MainApp;
-  MainApp -->|Generate Prompt| PromptEngine;
-  MainApp -->|Ingest Repository| IngestEngine;
-  IngestEngine -->|Fetch Code| GitRepo;
-  MainApp -->|Send Request| OpenAI;
-  OpenAI -->|API Call| OpenAIService;
-  OpenAIService -->|DFD + Threats| OpenAI;
-  OpenAI -->|Formatted Output| Output;
-  Output -->|Mermaid Diagram| User;
-  Output -->|STRIDE Analysis| User;
+flowchart TB
+    %% ==============================
+    %% External Entities (Untrusted Zone)
+    %% ==============================
+    subgraph EXT[External Boundary - Internet]
+        U[End User]
+        R[Git Repository]
+        OAI[OpenAI GPT API]
+        A[Attacker]
+    end
+
+    %% ==============================
+    %% Application Layer (Trusted Zone)
+    %% ==============================
+    subgraph APP[Application Layer - Trusted Zone]
+        P1[DFD Generator Tool]
+        P2[Input Validator]
+        P3[Use Case Analyzer]
+        P4[Repository Analyzer]
+        P5[Mermaid Diagram Generator]
+        P6[STRIDE Threat Analyzer]
+        P7[Output Renderer]
+    end
+
+    %% ==============================
+    %% Secure Storage (High-Security Zone)
+    %% ==============================
+    subgraph SEC[Secure Storage - High Security Zone]
+        P8[API Key Manager]
+        D6[(Encrypted API Keys)]
+    end
+
+    %% ==============================
+    %% Data Stores
+    %% ==============================
+    D1[(Use Case Descriptions)]
+    D2[(Repository Metadata)]
+    D3[(Validated Inputs)]
+    D4[(Mermaid Code)]
+    D5[(Threat Analysis Report)]
+
+    %% ==============================
+    %% Data Flows
+    %% ==============================
+    %% User Inputs
+    U -->|Submit use case + repo URL| P2
+    P2 -->|Store sanitized inputs| D3
+    P2 -->|Forward validated inputs| P3
+    P3 -->|Prepare structured request| P1
+    P2 -->|Save raw cases| D1
+
+    %% Repo Analysis
+    R -->|Fetch repo metadata| P4
+    P4 -->|Store metadata| D2
+    D2 -->|Pull repo data| P1
+
+    %% AI Integration
+    P1 -->|Send structured prompt| OAI
+    OAI -->|Return draft DFD| P5
+    P5 -->|Save diagram code| D4
+    D4 -->|Fetch code for rendering| P7
+
+    %% Threat Analysis
+    P1 -->|Send data for threat modeling| P6
+    P6 -->|Save STRIDE analysis| D5
+    D5 -->|Include in output| P7
+
+    %% Secure API Key Handling
+    P8 -->|Store keys| D6
+    D6 -->|Retrieve keys| P8
+    P8 -->|Provide API key securely| P1
+
+    %% Final Output
+    P7 -->|Deliver DFD + Threat Report| U
+
+    %% ==============================
+    %% Attacker Interaction (Threat Surface)
+    %% ==============================
+    A -->|Attempts malicious input| P2
+    A -->|Attempts tampering / data theft| P1
+    A -->|Tries to steal API Keys| SEC
+
 ```
 
 ### 2. STRIDE Threat Analysis Table
